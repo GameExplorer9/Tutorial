@@ -1,0 +1,96 @@
+using UnityEngine;
+
+    public class CameraMovement : MonoBehaviour
+    {
+        [SerializeField]
+        private float lookSpeedH = 2f;
+        
+        [SerializeField]
+        private float lookSpeedV = 2f;
+
+        [SerializeField]
+        private float zoomSpeed = 2f;
+
+        [SerializeField]
+        private float dragSpeed = 3f;
+
+        private float h = 0f;
+        private float v = 0f;
+        private Camera cam;
+        private Transform hitTransform = null;
+        private Vector3 rotationCenter;
+        public float cameraDistance = 2.0f;
+        
+        private void Start()
+        {
+            cam = Camera.main; //get the main cam
+        }
+
+        private void Update()
+        {
+            var mouse_x = Input.GetAxis("Mouse X");  
+            var mouse_y = -Input.GetAxis("Mouse Y"); 
+
+            if (Input.GetMouseButtonDown(1))
+            {  
+                Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;  
+
+                if (Physics.Raycast(ray, out hit))  
+                {  
+                    hitTransform = hit.transform; // get the hit obj transform
+                    rotationCenter = hit.point;   // set the hit position as rot center  
+                    Debug.Log("Hit Object: " + hitTransform.name);  
+                }  
+            }
+
+            //Press F to focus Obj
+            if (hitTransform != null && Input.GetKey(KeyCode.F))  
+            {  
+                Vector3 objectSizes = hitTransform.GetComponent<Renderer>().bounds.max - hitTransform.GetComponent<Renderer>().bounds.min;  
+                float objectSize = Mathf.Max(objectSizes.x, objectSizes.y, objectSizes.z);  
+                
+                float cameraView = 2.0f * Mathf.Tan(0.5f * Mathf.Deg2Rad * cam.fieldOfView);   
+                float distance = cameraDistance * objectSize / cameraView;  
+                distance += 0.5f * objectSize;   
+                
+                Vector3 boundsCenter = hitTransform.GetComponent<Renderer>().bounds.center;   
+                cam.transform.position = Vector3.Lerp(transform.position, boundsCenter - distance * cam.transform.forward, Time.fixedDeltaTime); 
+            }  
+
+            // cam rot around obj
+            if (Input.GetKey(KeyCode.LeftAlt) && Input.GetMouseButton(1))  
+            {   
+                transform.RotateAround(rotationCenter, Vector3.up, mouse_x * 5);  
+                transform.RotateAround(rotationCenter, transform.right, mouse_y * 5);  
+            }  
+             
+            // cam rot around obj  
+            if (Input.GetKey(KeyCode.LeftAlt) && Input.GetMouseButton(1))  
+            {   
+                transform.RotateAround(rotationCenter, Vector3.up, mouse_x * 5);  
+                transform.RotateAround(rotationCenter, transform.right, mouse_y * 5);  
+            }  
+
+            // cam common rot   
+            if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetMouseButton(1))  
+            {  
+                
+                h = mouse_x * lookSpeedH;
+                v = mouse_y * lookSpeedV;
+                Debug.Log(mouse_y);
+
+                transform.Rotate(Vector3.up, h, Space.World);
+                transform.Rotate(Vector3.right, v, Space.Self);
+            }
+            
+            //drag camera around with Middle Mouse
+            if (Input.GetMouseButton(2))
+            {
+                transform.Translate(-Input.GetAxisRaw("Mouse X") * dragSpeed, -Input.GetAxisRaw("Mouse Y") * dragSpeed, 0);
+            }
+
+            //Zoom in and out with Mouse Wheel
+            this.transform.Translate(0, 0, Input.GetAxis("Mouse ScrollWheel") * this.zoomSpeed, Space.Self);   
+        }
+    }
